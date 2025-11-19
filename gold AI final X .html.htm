@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goldphin AI Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gold-primary: #FFC300;
+            --gold-hover: #DAA520;
+            --gold-light: #FFF59D;
+            --sidebar-bg: #f4f7f9;
+            --sidebar-text: #1f2937;
+            --main-bg: #ffffff;
+            --input-bg: #e5e7eb;
+            --input-border: #d1d5db;
+            --send-btn-bg: var(--gold-primary);
+            --send-btn-hover: var(--gold-hover);
+            --user-bubble: var(--gold-primary);
+            --ai-bubble: #e5e7eb;
+            --ai-bubble-text: #1f2937;
+            --text-color: #1f2937;
+            --active-chat-bg: var(--gold-light);
+            --shadow: rgba(0, 0, 0, 0.05);
+            --modal-bg: rgba(0, 0, 0, 0.4);
+            --modal-content-bg: #ffffff;
+        }
+
+        [data-theme="dark"] {
+            --gold-primary: #FFD700;
+            --gold-hover: #FFC300;
+            --gold-dark-bg: #4A3900;
+            --sidebar-bg: #1f2937;
+            --sidebar-text: #f3f4f6;
+            --main-bg: #111827;
+            --input-bg: #374151;
+            --input-border: #4b5563;
+            --send-btn-bg: var(--gold-primary);
+            --send-btn-hover: var(--gold-hover);
+            --user-bubble: var(--gold-primary);
+            --ai-bubble: #374151;
+            --ai-bubble-text: #f3f4f6;
+            --text-color: #f3f4f6;
+            --active-chat-bg: var(--gold-dark-bg);
+            --shadow: rgba(255, 255, 255, 0.05);
+            --modal-bg: rgba(0, 0, 0, 0.6);
+            --modal-content-bg: #1f2937;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--main-bg);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        .sidebar {
+            width: 300px;
+            min-width: 300px;
+            background-color: var(--sidebar-bg);
+            color: var(--sidebar-text);
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--input-border);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .sidebar-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--input-border);
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .logo {
+            width: 30px;
+            height: 30px;
+            font-size: 1.5rem;
+            margin-right: 10px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-text {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .new-chat-btn {
+            width: 100%;
+            padding: 10px;
+            background-color: var(--send-btn-bg);
+            color: var(--sidebar-text);
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .new-chat-btn:hover {
+            background-color: var(--send-btn-hover);
+            transform: translateY(-1px);
+        }
+        
+        .chat-history {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+            margin: 0 8px;
+        }
+
+        .chat-item {
+            padding: 10px 15px;
+            margin-bottom: 4px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: background-color 0.2s;
+        }
+
+        .chat-item:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        [data-theme="dark"] .chat-item:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .chat-item.active {
+            background-color: var(--active-chat-bg);
+            font-weight: 600;
+            color: var(--sidebar-text);
+        }
+
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid var(--input-border);
+            display: flex;
+            gap: 10px;
+        }
+
+        .settings-btn, .user-btn {
+            flex: 1;
+            padding: 10px;
+            background: none;
+            border: 1px solid var(--input-border);
+            color: var(--sidebar-text);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-weight: 600;
+        }
+
+        .settings-btn:hover, .user-btn:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        [data-theme="dark"] .settings-btn:hover, [data-theme="dark"] .user-btn:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background-color: var(--main-bg);
+        }
+        
+        .mobile-menu-btn {
+            display: none;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: var(--input-bg);
+            color: var(--text-color);
+            border: none;
+            padding: 8px 12px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 10;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px var(--shadow);
+        }
+
+        .chat-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+            padding-bottom: 120px;
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .welcome-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            opacity: 0.7;
+        }
+
+        .welcome-logo {
+            width: 60px;
+            height: 60px;
+            font-size: 3rem;
+            margin-bottom: 10px;
+            line-height: 1;
+        }
+
+        .welcome-text {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .welcome-subtitle {
+            font-size: 1rem;
+            color: var(--sidebar-text);
+        }
+
+        .messages {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .message {
+            display: flex;
+            align-items: flex-start;
+            padding: 10px;
+            border-radius: 12px;
+            max-width: 95%;
+        }
+        
+        .message.user {
+            justify-content: flex-end;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .message.assistant {
+            justify-content: flex-start;
+            margin-right: auto;
+            text-align: left;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            background-color: var(--input-border);
+            margin: 0 10px;
+        }
+
+        .message.user .message-avatar {
+            order: 2;
+        }
+
+        .message.assistant .message-avatar {
+            order: 1;
+        }
+
+        .message-content {
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 1rem;
+            white-space: pre-wrap;
+            position: relative;
+        }
+
+        .message.user .message-content {
+            background-color: var(--user-bubble);
+            color: var(--sidebar-text);
+            border-bottom-right-radius: 2px;
+            order: 1;
+        }
+
+        .message.assistant .message-content {
+            background-color: var(--ai-bubble);
+            color: var(--ai-bubble-text);
+            border-bottom-left-radius: 2px;
+            order: 2;
+        }
+
+        .input-area {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            padding: 20px 0;
+            background-color: var(--main-bg);
+            border-top: 1px solid var(--input-border);
+            z-index: 5;
+        }
+
+        .input-container {
+            display: flex;
+            align-items: flex-end;
+            width: 100%;
+            max-width: 900px;
+            padding: 0 20px;
+        }
+
+        .message-input {
+            flex-grow: 1;
+            padding: 12px 18px;
+            border: 1px solid var(--input-border);
+            border-radius: 25px;
+            font-size: 1rem;
+            resize: none;
+            overflow-y: hidden;
+            max-height: 200px;
+            margin-right: 10px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: var(--send-btn-bg);
+            box-shadow: 0 0 0 3px var(--active-chat-bg);
+        }
+
+        .message-input.loading {
+            cursor: wait;
+        }
+
+        .send-btn {
+            background-color: var(--send-btn-bg);
+            color: var(--sidebar-text);
+            border: none;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s, transform 0.1s;
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            background-color: var(--send-btn-hover);
+            transform: scale(1.05);
+        }
+
+        .send-btn:disabled {
+            background-color: var(--input-border);
+            cursor: not-allowed;
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(0, 0, 0, 0.2);
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s, background 0.2s;
+        }
+
+        .message.assistant:hover .copy-btn {
+            opacity: 1;
+        }
+
+        .copy-btn:hover {
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: var(--modal-bg);
+            backdrop-filter: blur(2px);
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .modal.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background-color: var(--modal-content-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 500px;
+            transform: scale(0.95);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--input-border);
+            padding-bottom: 10px;
+        }
+
+        .setting-section {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--input-border);
+        }
+
+        .setting-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .setting-label {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .setting-input, .setting-select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--input-border);
+            border-radius: 8px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            margin-bottom: 10px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .api-status {
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .api-status.success {
+            background-color: #d1fae5;
+            color: #065f46;
+            border: 1px solid #6ee7b7;
+        }
+
+        .api-status.error {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        [data-theme="dark"] .api-status.success {
+            background-color: #064e3b;
+            color: #d1fae5;
+        }
+
+        [data-theme="dark"] .api-status.error {
+            background-color: #7f1d1d;
+            color: #fee2e2;
+        }
+
+        .theme-toggle {
+            display: flex;
+            gap: 5px;
+            border: 1px solid var(--input-border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .theme-btn {
+            padding: 8px 12px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        .theme-btn.active {
+            background-color: var(--send-btn-bg);
+            color: var(--sidebar-text);
+        }
+
+        .developer-info p {
+            margin-bottom: 10px;
+            line-height: 1.5;
+            font-size: 0.95rem;
+        }
+
+        .modal-actions {
+            margin-top: 20px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+
+        .modal-btn.primary {
+            background-color: var(--send-btn-bg);
+            color: var(--sidebar-text);
+        }
+
+        .modal-btn.secondary {
+            background-color: var(--input-bg);
+            color: var(--text-color);
+        }
+
+        .modal-btn:hover {
+            opacity: 0.9;
+        }
+        
+        .error-popup {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #ef4444;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            transform: translateY(150%);
+            transition: transform 0.4s ease-out;
+            max-width: 400px;
+        }
+
+        .error-popup.active {
+            transform: translateY(0);
+        }
+
+        .error-text {
+            margin-right: 15px;
+            flex: 1;
+        }
+
+        .retry-btn {
+            background: none;
+            border: 1px solid white;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+
+        .retry-btn:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                height: 100%;
+                z-index: 20;
+                transform: translateX(-100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .chat-container {
+                padding-top: 60px;
+            }
+        }
+
+        .help-text {
+            font-size: 0.85rem;
+            color: #6b7280;
+            margin-top: 5px;
+            line-height: 1.4;
+        }
+
+        [data-theme="dark"] .help-text {
+            color: #9ca3af;
+        }
+    </style>
+</head>
+<body data-theme="light">
+    <div class="container">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-container">
+                    <div class="logo">🐬</div>
+                    <div class="logo-text">Goldphin AI</div>
+                </div>
+                <button class="new-chat-btn" onclick="createNewChat()">+ New Chat</button>
+            </div>
+            <div class="chat-history" id="chatHistory"></div>
+            <div class="sidebar-footer">
+                <button class="settings-btn" onclick="openSettings()">⚙️ Settings</button>
+                <button class="user-btn" onclick="openDeveloperInfo()">👨‍💻 Developer</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+            
+            <div class="chat-container" id="chatContainer">
+                <div class="welcome-screen" id="welcomeScreen">
+                    <div class="welcome-logo">🐬</div>
+                    <div class="welcome-text">Welcome to Goldphin AI</div>
+                    <div class="welcome-subtitle">Universal AI Assistant</div>
+                </div>
+                <div class="messages" id="messages" style="display: none;"></div>
+            </div>
+
+            <div class="input-area">
+                <div class="input-container">
+                    <textarea 
+                        class="message-input" 
+                        id="messageInput" 
+                        placeholder="Message Goldphin AI..."
+                        rows="1"
+                        onkeydown="handleKeyPress(event)"
+                    ></textarea>
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">API Configuration</div>
+
+            <div class="setting-section">
+                <label class="setting-label">API Provider</label>
+                <select id="apiProvider" class="setting-select" onchange="updateProviderFields()">
+                    <option value="gemini">Google Gemini</option>
+                    <option value="openai">OpenAI</option>
+                    <option value="anthropic">Anthropic Claude</option>
+                    <option value="custom">Custom API</option>
+                </select>
+                <p class="help-text">Select your AI provider</p>
+            </div>
+
+            <div class="setting-section">
+                <label class="setting-label">API Key</label>
+                <input type="password" id="apiKeyInput" class="setting-input" placeholder="Paste your API Key here">
+                <p class="help-text">Your API key is stored locally and never sent anywhere except to the API provider</p>
+            </div>
+
+            <div class="setting-section" id="modelSection">
+                <label class="setting-label">Model Name</label>
+                <input type="text" id="apiModelInput" class="setting-input" placeholder="e.g., gemini-2.0-flash-exp">
+                <p class="help-text" id="modelHelp">Specify the model you want to use</p>
+            </div>
+
+            <div class="setting-section" id="endpointSection" style="display: none;">
+                <label class="setting-label">Custom API Endpoint</label>
+                <input type="text" id="apiEndpointInput" class="setting-input" placeholder="https://api.example.com/v1/chat">
+                <p class="help-text">Full URL of your custom API endpoint</p>
+            </div>
+
+            <div id="apiStatus" class="api-status" style="display: none;"></div>
+
+            <div class="setting-section">
+                <label class="setting-label">Theme</label>
+                <div class="theme-toggle">
+                    <button class="theme-btn" id="lightBtn" onclick="setTheme('light')">☀️ Light</button>
+                    <button class="theme-btn" id="darkBtn" onclick="setTheme('dark')">🌙 Dark</button>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="modal-btn secondary" onclick="closeSettings()">Cancel</button>
+                <button class="modal-btn primary" onclick="saveApiConfig(true)">Save & Test</button>
+                <button class="modal-btn primary" onclick="saveApiConfig(false)">Save Without Test</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="developerModal">
+        <div class="modal-content">
+            <div class="modal-header">About Goldphin AI</div>
+            
+            <div class="developer-info">
+                <p><strong>Goldphin AI</strong> is a universal AI chat interface that works with multiple AI providers including Google Gemini, OpenAI, Anthropic Claude, and custom APIs.</p>
+                
+                <p>Created by <strong>Avinash Waghmare</strong>, CSE student at MIT College, Chhatrapati Sambhaji Nagar.</p>
+                
+                <p><strong>Features:</strong></p>
+                <p>• Multi-provider support (Gemini, OpenAI, Claude)<br>
+                • Secure local storage<br>
+                • Clean, modern interface<br>
+                • Dark mode support<br>
+                • Chat history management</p>
+                
+                <p>---</p>
+                
+                <p><strong>Welcome to Goldphin! 🐬</strong></p>
+            </div>
+
+            <div class="modal-actions">
+                <button class="modal-btn primary" onclick="closeDeveloperInfo()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="error-popup" id="errorPopup">
+        <div class="error-text" id="errorText"></div>
+        <button class="retry-btn" onclick="hideError()">Close</button>
+    </div>
+
+    <script>
+        const STORAGE_KEYS = {
+            CHATS: 'goldphin_chats',
+            CURRENT_CHAT: 'goldphin_current_chat',
+            THEME: 'goldphin_theme',
+            API_PROVIDER: 'goldphin_api_provider',
+            API_KEY: 'goldphin_api_key',
+            API_MODEL: 'goldphin_api_model',
+            API_ENDPOINT: 'goldphin_api_endpoint'
+        };
+
+        const API_CONFIGS = {
+            gemini: {
+                name: 'Google Gemini',
+                defaultModel: 'gemini-2.0-flash-exp',
+                buildUrl: (model, key) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+                formatRequest: (messages, model) => ({
+                    contents: messages.map(msg => ({
+                        role: msg.role === 'assistant' ? 'model' : 'user',
+                        parts: [{ text: msg.content }]
+                    })),
+                    generationConfig: { temperature: 0.7 }
+                }),
+                parseResponse: (data) => {
+                    const candidate = data.candidates?.[0];
+                    if (candidate?.content?.parts?.[0]?.text) {
+                        return candidate.content.parts[0].text;
+                    }
+                    throw new Error('Invalid response format from Gemini API');
+                }
+            },
+            openai: {
+                name: 'OpenAI',
+                defaultModel: 'gpt-4o-mini',
+                buildUrl: () => 'https://api.openai.com/v1/chat/completions',
+                formatRequest: (messages, model) => ({
+                    model: model,
+                    messages: messages.map(msg => ({
+                        role: msg.role,
+                        content: msg.content
+                    })),
+                    temperature: 0.7
+                }),
+                parseResponse: (data) => {
+                    if (data.choices?.[0]?.message?.content) {
+                        return data.choices[0].message.content;
+                    }
+                    throw new Error('Invalid response format from OpenAI API');
+                },
+                headers: (key) => ({
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${key}`
+                })
+            },
+            anthropic: {
+                name: 'Anthropic Claude',
+                defaultModel: 'claude-3-5-sonnet-20241022',
+                buildUrl: () => 'https://api.anthropic.com/v1/messages',
+                formatRequest: (messages, model) => ({
+                    model: model,
+                    max_tokens: 4096,
+                    messages: messages.map(msg => ({
+                        role: msg.role === 'assistant' ? 'assistant' : 'user',
+                        content: msg.content
+                    }))
+                }),
+                parseResponse: (data) => {
+                    if (data.content?.[0]?.text) {
+                        return data.content[0].text;
+                    }
+                    throw new Error('Invalid response format from Anthropic API');
+                },
+                headers: (key) => ({
+                    'Content-Type': 'application/json',
+                    'x-api-key': key,
+                    'anthropic-version': '2023-06-01'
+                })
+            },
+            custom: {
+                name: 'Custom API',
+                defaultModel: 'custom-model',
+                buildUrl: (model, key, endpoint) => endpoint,
+                formatRequest: (messages, model) => ({
+                    model: model,
+                    messages: messages,
+                    temperature: 0.7
+                }),
+                parseResponse: (data) => {
+                    if (data.response) return data.response;
+                    if (data.message) return data.message;
+                    if (data.text) return data.text;
+                    if (data.content) return data.content;
+                    throw new Error('Could not parse response from custom API');
+                }
+            }
+        };
+
+        let currentChatId = null;
+        let lastUserMessage = null;
+        let isStreaming = false;
+        let currentConfig = {
+            provider: 'gemini',
+            apiKey: '',
+            model: '',
+            endpoint: ''
+        };
+
+        function init() {
+            loadTheme();
+            loadApiConfig();
+            loadChatHistory();
+            
+            const savedChatId = localStorage.getItem(STORAGE_KEYS.CURRENT_CHAT);
+            if (savedChatId) {
+                loadChat(savedChatId);
+            } else {
+                createNewChat();
+            }
+
+            window.addEventListener('resize', () => {
+                const input = document.getElementById('messageInput');
+                if (input) adjustInputHeight(input);
+            });
+
+            if (!currentConfig.apiKey) {
+                setTimeout(() => {
+                    showErrorPopup('API Key Required', 'Please configure your API key in Settings to start chatting.');
+                }, 1000);
+            }
+        }
+
+        function loadApiConfig() {
+            currentConfig.provider = localStorage.getItem(STORAGE_KEYS.API_PROVIDER) || 'gemini';
+            currentConfig.apiKey = localStorage.getItem(STORAGE_KEYS.API_KEY) || '';
+            currentConfig.model = localStorage.getItem(STORAGE_KEYS.API_MODEL) || API_CONFIGS[currentConfig.provider].defaultModel;
+            currentConfig.endpoint = localStorage.getItem(STORAGE_KEYS.API_ENDPOINT) || '';
+        }
+
+        function updateProviderFields() {
+            const provider = document.getElementById('apiProvider').value;
+            const config = API_CONFIGS[provider];
+            
+            document.getElementById('apiModelInput').placeholder = `e.g., ${config.defaultModel}`;
+            document.getElementById('apiModelInput').value = config.defaultModel;
+            
+            const endpointSection = document.getElementById('endpointSection');
+            if (provider === 'custom') {
+                endpointSection.style.display = 'block';
+            } else {
+                endpointSection.style.display = 'none';
+            }
+
+            const modelHelp = document.getElementById('modelHelp');
+            const helpTexts = {
+                gemini: 'Models: gemini-2.0-flash-exp, gemini-1.5-pro, gemini-1.5-flash',
+                openai: 'Models: gpt-4o, gpt-4o-mini, gpt-4-turbo, gpt-3.5-turbo',
+                anthropic: 'Models: claude-3-5-sonnet-20241022, claude-3-opus-20240229',
+                custom: 'Enter the model name required by your API'
+            };
+            modelHelp.textContent = helpTexts[provider];
+        }
+
+        async function saveApiConfig(runTest = true) {
+            const provider = document.getElementById('apiProvider').value;
+            const apiKey = document.getElementById('apiKeyInput').value.trim();
+            const model = document.getElementById('apiModelInput').value.trim() || API_CONFIGS[provider].defaultModel;
+            const endpoint = document.getElementById('apiEndpointInput').value.trim();
+
+            if (!apiKey) {
+                showStatus('Please enter an API key', 'error');
+                return;
+            }
+
+            if (provider === 'custom' && !endpoint) {
+                showStatus('Please enter a custom API endpoint', 'error');
+                return;
+            }
+
+            localStorage.setItem(STORAGE_KEYS.API_PROVIDER, provider);
+            localStorage.setItem(STORAGE_KEYS.API_KEY, apiKey);
+            localStorage.setItem(STORAGE_KEYS.API_MODEL, model);
+            localStorage.setItem(STORAGE_KEYS.API_ENDPOINT, endpoint);
+
+            currentConfig.provider = provider;
+            currentConfig.apiKey = apiKey;
+            currentConfig.model = model;
+            currentConfig.endpoint = endpoint;
+
+            if (runTest) {
+                showStatus('Testing API connection...', 'success');
+                
+                const testResult = await testApiConnection();
+                if (testResult.success) {
+                    showStatus('✓ API configuration saved and tested successfully!', 'success');
+                    setTimeout(() => {
+                        closeSettings();
+                    }, 1500);
+                } else {
+                    showStatus(`⚠ Configuration saved, but test failed: ${testResult.error}. This might be due to CORS restrictions in browser. Try sending a real message to verify it works.`, 'error');
+                }
+            } else {
+                showStatus('✓ API configuration saved! Try sending a message to test it.', 'success');
+                setTimeout(() => {
+                    closeSettings();
+                }, 1500);
+            }
+        }
+
+        async function testApiConnection() {
+            try {
+                const testMessages = [{ role: 'user', content: 'Hi' }];
+                const response = await callAPI(testMessages);
+                return { success: true, response };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('apiStatus');
+            statusDiv.textContent = message;
+            statusDiv.className = `api-status ${type}`;
+            statusDiv.style.display = 'block';
+        }
+
+        async function callAPI(messages) {
+            const { provider, apiKey, model, endpoint } = currentConfig;
+            const config = API_CONFIGS[provider];
+
+            if (!apiKey) {
+                throw new Error('API key not configured');
+            }
+
+            const url = config.buildUrl(model, apiKey, endpoint);
+            const requestBody = config.formatRequest(messages, model);
+            
+            const headers = config.headers ? config.headers(apiKey) : {
+                'Content-Type': 'application/json'
+            };
+
+            let response;
+            try {
+                response = await fetch(url, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(requestBody),
+                    mode: 'cors'
+                });
+            } catch (fetchError) {
+                if (fetchError.message.includes('Failed to fetch') || fetchError.message.includes('CORS')) {
+                    throw new Error('Cannot connect to API - This may be due to CORS restrictions. Some APIs cannot be called directly from browsers. Consider using a proxy server or backend API.');
+                }
+                throw fetchError;
+            }
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                let errorMsg = errorData.error?.message || errorData.message || `HTTP ${response.status}`;
+                
+                if (response.status === 401 || response.status === 403) {
+                    errorMsg = 'Invalid API Key or Authentication failed';
+                } else if (response.status === 429) {
+                    errorMsg = 'Rate limit exceeded. Please wait and try again.';
+                } else if (response.status === 400) {
+                    errorMsg = `Bad Request: ${errorMsg}`;
+                }
+                
+                throw new Error(errorMsg);
+            }
+
+            const data = await response.json();
+            return config.parseResponse(data);
+        }
+
+        function createNewChat() {
+            currentChatId = Date.now().toString();
+            const chat = {
+                id: currentChatId,
+                title: 'New Chat',
+                messages: [],
+                createdAt: Date.now()
+            };
+            
+            saveChat(chat);
+            renderMessages(chat.messages);
+            showChat();
+            loadChatHistory();
+            closeSidebar();
+            document.getElementById('messageInput').focus();
+        }
+
+        function loadChat(chatId) {
+            const chats = getChats();
+            const chat = chats.find(c => c.id === chatId);
+            
+            if (chat) {
+                currentChatId = chatId;
+                localStorage.setItem(STORAGE_KEYS.CURRENT_CHAT, chatId);
+                renderMessages(chat.messages);
+                showChat();
+                closeSidebar();
+            }
+        }
+
+        function saveChat(chat) {
+            const chats = getChats();
+            const index = chats.findIndex(c => c.id === chat.id);
+            
+            if (index >= 0) {
+                chats[index] = chat;
+            } else {
+                chats.unshift(chat);
+            }
+            
+            chats.sort((a, b) => b.createdAt - a.createdAt);
+            localStorage.setItem(STORAGE_KEYS.CHATS, JSON.stringify(chats));
+        }
+
+        function getChats() {
+            const stored = localStorage.getItem(STORAGE_KEYS.CHATS);
+            return stored ? JSON.parse(stored) : [];
+        }
+
+        function getCurrentChat() {
+            if (!currentChatId) return null;
+            return getChats().find(c => c.id === currentChatId);
+        }
+
+        function updateChatTitle(chatId, title) {
+            const chats = getChats();
+            const chat = chats.find(c => c.id === chatId);
+            if (chat && (chat.title === 'New Chat' || chat.title === 'Empty Chat')) {
+                let newTitle = title.replace(/\s+/g, ' ').trim();
+                newTitle = newTitle.substring(0, 50);
+                if (newTitle.length === 50 && title.length > 50) {
+                    newTitle += '...';
+                }
+                chat.title = newTitle || 'Empty Chat';
+                saveChat(chat);
+                loadChatHistory();
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+
+            if (!message || isStreaming) return;
+
+            if (!currentConfig.apiKey) {
+                showErrorPopup('API Key Missing', 'Please configure your API key in Settings before chatting.');
+                return;
+            }
+
+            if (!currentChatId || getCurrentChat() === undefined) {
+                createNewChat();
+            }
+
+            const chat = getCurrentChat();
+            if (!chat) return;
+
+            const userMessageObj = { role: 'user', content: message };
+            chat.messages.push(userMessageObj);
+            renderMessages(chat.messages);
+            saveChat(chat);
+
+            lastUserMessage = message;
+            input.value = '';
+            adjustInputHeight(input);
+
+            if (chat.title === 'New Chat' || chat.title === 'Empty Chat') {
+                updateChatTitle(chat.id, message);
+            }
+
+            getAIResponse(message);
+        }
+
+        async function getAIResponse(userMessage) {
+            isStreaming = true;
+            document.getElementById('sendBtn').disabled = true;
+            document.getElementById('messageInput').classList.add('loading');
+
+            const chat = getCurrentChat();
+            if (!chat) return;
+
+            const tempAssistantMessage = { role: 'assistant', content: '...' };
+            chat.messages.push(tempAssistantMessage);
+            renderMessages(chat.messages);
+            
+            const messagesContainer = document.getElementById('messages');
+            let assistantMessageElement = messagesContainer.lastElementChild.querySelector('.message-content');
+            
+            let fullResponse = '';
+            const maxRetries = 3;
+            let currentRetry = 0;
+
+            try {
+                const historyLimit = 10;
+                const history = chat.messages.slice(-historyLimit - 1, -1);
+
+                while (currentRetry < maxRetries) {
+                    try {
+                        fullResponse = await callAPI(history);
+                        break;
+                    } catch (error) {
+                        if (currentRetry < maxRetries - 1) {
+                            const delay = Math.pow(2, currentRetry) * 1000 + Math.random() * 1000;
+                            currentRetry++;
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            continue;
+                        }
+                        throw error;
+                    }
+                }
+
+                if (fullResponse && assistantMessageElement) {
+                    assistantMessageElement.textContent = fullResponse;
+                    document.getElementById('chatContainer').scrollTop = document.getElementById('chatContainer').scrollHeight;
+                }
+                
+                chat.messages[chat.messages.length - 1].content = fullResponse;
+                saveChat(chat);
+
+            } catch (error) {
+                console.error("Error fetching AI response:", error);
+                showErrorPopup('AI Response Error', error.message);
+                
+                if (chat.messages.length > 0 && chat.messages[chat.messages.length - 1].role === 'assistant') {
+                    chat.messages.pop();
+                }
+                renderMessages(chat.messages);
+                saveChat(chat);
+            } finally {
+                isStreaming = false;
+                document.getElementById('sendBtn').disabled = false;
+                document.getElementById('messageInput').classList.remove('loading');
+                document.getElementById('messageInput').focus();
+            }
+        }
+
+        function openSettings() {
+            document.getElementById('settingsModal').classList.add('active');
+            
+            document.getElementById('apiProvider').value = currentConfig.provider;
+            document.getElementById('apiKeyInput').value = currentConfig.apiKey;
+            document.getElementById('apiModelInput').value = currentConfig.model;
+            document.getElementById('apiEndpointInput').value = currentConfig.endpoint;
+            
+            updateProviderFields();
+            
+            const theme = document.body.getAttribute('data-theme') || 'light';
+            setTheme(theme, false);
+            
+            document.getElementById('apiStatus').style.display = 'none';
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.remove('active');
+            document.getElementById('apiStatus').style.display = 'none';
+            closeSidebar();
+        }
+
+        function renderMessages(messages) {
+            const messagesContainer = document.getElementById('messages');
+            messagesContainer.innerHTML = '';
+
+            if (messages.length === 0) {
+                document.getElementById('welcomeScreen').style.display = 'flex';
+                messagesContainer.style.display = 'none';
+                return;
+            }
+
+            document.getElementById('welcomeScreen').style.display = 'none';
+            messagesContainer.style.display = 'block';
+
+            messages.forEach(msg => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${msg.role}`;
+                
+                const avatarDiv = document.createElement('div');
+                avatarDiv.className = 'message-avatar';
+                avatarDiv.textContent = msg.role === 'user' ? '🙋' : '🐬';
+
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                contentDiv.textContent = msg.content;
+                
+                if (msg.role === 'assistant') {
+                    const copyBtn = document.createElement('button');
+                    copyBtn.className = 'copy-btn';
+                    copyBtn.textContent = 'Copy';
+                    copyBtn.onclick = () => {
+                        navigator.clipboard.writeText(msg.content).then(() => {
+                            copyBtn.textContent = 'Copied!';
+                            setTimeout(() => copyBtn.textContent = 'Copy', 1500);
+                        }).catch(() => {
+                            const tempTextarea = document.createElement('textarea');
+                            tempTextarea.value = msg.content;
+                            document.body.appendChild(tempTextarea);
+                            tempTextarea.select();
+                            try {
+                                document.execCommand('copy');
+                                copyBtn.textContent = 'Copied!';
+                                setTimeout(() => copyBtn.textContent = 'Copy', 1500);
+                            } catch (err) {
+                                copyBtn.textContent = 'Failed';
+                            }
+                            document.body.removeChild(tempTextarea);
+                        });
+                    };
+                    contentDiv.appendChild(copyBtn);
+                }
+
+                if (msg.role === 'user') {
+                    messageDiv.appendChild(contentDiv);
+                    messageDiv.appendChild(avatarDiv);
+                } else {
+                    messageDiv.appendChild(avatarDiv);
+                    messageDiv.appendChild(contentDiv);
+                }
+
+                messagesContainer.appendChild(messageDiv);
+            });
+
+            document.getElementById('chatContainer').scrollTop = document.getElementById('chatContainer').scrollHeight;
+        }
+
+        function showChat() {
+            const chat = getCurrentChat();
+            if (chat && chat.messages.length > 0) {
+                document.getElementById('welcomeScreen').style.display = 'none';
+                document.getElementById('messages').style.display = 'block';
+            } else {
+                document.getElementById('welcomeScreen').style.display = 'flex';
+                document.getElementById('messages').style.display = 'none';
+            }
+            
+            document.querySelectorAll('.chat-item').forEach(item => item.classList.remove('active'));
+            const currentChatItem = document.getElementById(`chat-item-${currentChatId}`);
+            if (currentChatItem) {
+                currentChatItem.classList.add('active');
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+            adjustInputHeight(event.target);
+        }
+
+        function adjustInputHeight(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }
+
+        function loadChatHistory() {
+            const historyContainer = document.getElementById('chatHistory');
+            historyContainer.innerHTML = '';
+            const chats = getChats();
+
+            chats.sort((a, b) => b.createdAt - a.createdAt);
+
+            chats.forEach(chat => {
+                const item = document.createElement('div');
+                item.className = `chat-item ${chat.id === currentChatId ? 'active' : ''}`;
+                item.id = `chat-item-${chat.id}`;
+                item.textContent = chat.title;
+                item.onclick = () => loadChat(chat.id);
+                historyContainer.appendChild(item);
+            });
+        }
+
+        function setTheme(theme, save = true) {
+            document.body.setAttribute('data-theme', theme);
+            
+            document.getElementById('lightBtn').classList.remove('active');
+            document.getElementById('darkBtn').classList.remove('active');
+
+            if (theme === 'dark') {
+                document.getElementById('darkBtn').classList.add('active');
+            } else {
+                document.getElementById('lightBtn').classList.add('active');
+            }
+
+            if (save) {
+                localStorage.setItem(STORAGE_KEYS.THEME, theme);
+            }
+        }
+
+        function loadTheme() {
+            const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME) || 'light';
+            setTheme(savedTheme, false);
+        }
+        
+        function openDeveloperInfo() {
+            document.getElementById('developerModal').classList.add('active');
+        }
+
+        function closeDeveloperInfo() {
+            document.getElementById('developerModal').classList.remove('active');
+            closeSidebar();
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+
+        function closeSidebar() {
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('active');
+            }
+        }
+
+        let errorTimer;
+        function showErrorPopup(title, message) {
+            clearTimeout(errorTimer);
+            const popup = document.getElementById('errorPopup');
+            const textElement = document.getElementById('errorText');
+            textElement.innerHTML = `<strong>${title}:</strong> ${message}`;
+            popup.classList.add('active');
+            
+            errorTimer = setTimeout(() => {
+                popup.classList.remove('active');
+            }, 8000);
+        }
+
+        function hideError() {
+            document.getElementById('errorPopup').classList.remove('active');
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
